@@ -16,35 +16,37 @@ import javafx.stage.FileChooser;
 import statistics.Stat;
 
 public class SampleController {
-	//フィールド数
+	// フィールド数
 	int numOfField;
-	//データ数
+	// データ数
 	int numOfData;
-	//データテーブル
+	// データテーブル
 	double[][] dataTable;
-	//フィールド名レコード
+	// フィールド名レコード
 	String[] fieldNameRecord;
-	//データ個票名レコード
+	// データ個票名レコード
 	String[] idNameRecord;
 	@FXML
 	TextArea log = new TextArea();
+
 	@FXML
 	private void quitAction() {
 		System.exit(0);
 	}
+
 	@FXML
 	private void openAction() {
 		List<String> theList = new ArrayList<String>();
-		FileChooser fc =new FileChooser();
+		FileChooser fc = new FileChooser();
 		fc.setTitle("Open data file");
 		fc.setInitialDirectory(new File("."));
 		File file = fc.showOpenDialog(null);
-		log.appendText("data file is set:"+file.getAbsolutePath()+"\n");
+		log.appendText("data file is set:" + file.getAbsolutePath() + "\n");
 		try {
-			FileReader fr =new FileReader(file);
+			FileReader fr = new FileReader(file);
 			BufferedReader br = new BufferedReader(fr);
-			String line =null;
-			while((line=br.readLine())!=null) {
+			String line = null;
+			while ((line = br.readLine()) != null) {
 				theList.add(line);
 			}
 			br.close();
@@ -58,81 +60,97 @@ public class SampleController {
 		//
 		fieldNameRecord = theList.get(0).split(",");
 		numOfField = fieldNameRecord.length;
-		idNameRecord = new String[theList.size()-1];
-		for(int i=1;i<theList.size();i++) {
-			idNameRecord[i-1] = theList.get(i).split(",")[0];
+		idNameRecord = new String[theList.size() - 1];
+		for (int i = 1; i < theList.size(); i++) {
+			idNameRecord[i - 1] = theList.get(i).split(",")[0];
 		}
 		numOfData = idNameRecord.length;
 		//
-		dataTable = new double[numOfData][numOfField-1];
-		for(int i=0;i<dataTable.length;i++) {
-			String tmpStr[] = theList.get(i+1).split(",");
-			for(int j=0;j<dataTable[0].length;j++) {
-				double v = Double.parseDouble(tmpStr[j+1]);
+		dataTable = new double[numOfData][numOfField - 1];
+		for (int i = 0; i < dataTable.length; i++) {
+			String tmpStr[] = theList.get(i + 1).split(",");
+			for (int j = 0; j < dataTable[0].length; j++) {
+				double v = Double.parseDouble(tmpStr[j + 1]);
 				dataTable[i][j] = v;
 			}
 		}
 		//
 	}
+
 	@FXML
 	private void execAction() {
-		for(String s : fieldNameRecord) {
-			log.appendText(s+"\n");
-		}
 		//
-		for(String s : idNameRecord) {
-			log.appendText(s+"\n");
-		}
-		//
-		for(double[] itemA : dataTable) {
-			for(double v : itemA) {
-				log.appendText("\t"+v);
+		for (double[] itemA : dataTable) {
+			for (double v : itemA) {
+				log.appendText("\t" + v);
 			}
 			log.appendText("\n");
 		}
-		//1列ずつ平均・分散を計算
-		log.appendText("\n");
-		for(int j=0;j<dataTable[0].length;j++) {
-			log.appendText("\t"+fieldNameRecord[j+1]);
-			//1列のデータ配列
-			double[] theCol = Stat.getColumn(j,dataTable);
-			//平均値を計算
-			double a = Stat.ave(theCol);
-			//表示
-			log.appendText("\t"+a);
-			//標準偏差を計算
-			a = Stat.stdDev(theCol);
-			//表示
-			log.appendText("\t"+a+"\n");
-			//
-			double[] std = Stat.standardize(theCol);
-			//平均値を計算
-			a = round(Stat.ave(std),3);
-			//表示
-			log.appendText("\t"+a);
-			//標準偏差を計算
-			a = round(Stat.stdDev(std),3);
-			//表示
-			log.appendText("\t"+a+"\n");
-		}
-		log.appendText("\n");
-		//標準得点表
+		printLine("標準得点表");
+		// 標準得点表
 		double[][] stdScoreTable = Stat.standardize(dataTable);
 		showTable(stdScoreTable);
+		//変数の数
+		int numOfVariables = dataTable[0].length;
+		//平均値・標準偏差
+		log.appendText("平均値：");
+		for(int i=0;i<numOfVariables;i++) {
+			double[] a = Stat.getColumn(i, dataTable);
+			double ave = Stat.ave(a);
+			log.appendText("\t"+ave);
+		}
+		log.appendText("\n");
+		log.appendText("標準偏差:");
+		for(int i=0;i<numOfVariables;i++) {
+			double[] a = Stat.getColumn(i, dataTable);
+			double dev = Stat.stdDev(a);
+			log.appendText("\t"+dev);
+		}
+		log.appendText("\n");
+		// 分散共分散行列
+		double[][] covariMat =Stat.covarianceMatrix(dataTable);
+		printLine("分散・共分散行列");
+		showTable(covariMat);
+		printLine("相関行列");
+		for(int i=0;i<numOfVariables;i++) {
+			double[] x = Stat.getColumn(i, dataTable);
+			double sigma_x = Stat.stdDev(x);
+			for(int j=0;j<numOfVariables;j++) {
+				double[] y = Stat.getColumn(j, dataTable);
+				double covar = Stat.covariate(x, y);
+				double sigma_y = Stat.stdDev(y);
+				covariMat[i][j] = covar/(sigma_x*sigma_y);
+			}
+		}
+		//
+		showTable(covariMat);
+		printLine("相関行列2");
+		covariMat =Stat.correlationMatrix(dataTable);
+		showTable(covariMat);
+
+
+
 	}// end of execAction()
+		//
+
+	private void printLine(String string) {
+		log.appendText("----------" + string + "----------\n");
+	}
+
 	//
 	double round(double in, int scale) {
 		BigDecimal bd = BigDecimal.valueOf(in);
-		double r =bd.setScale(scale, RoundingMode.HALF_UP).doubleValue();
+		double r = bd.setScale(scale, RoundingMode.HALF_UP).doubleValue();
 		return r;
 	}
-	void showTable(double[][] in ) {
-		for(int i= 0;i<in.length;i++) {
-			for(int j=0;j<in[0].length;j++) {
+
+	void showTable(double[][] in) {
+		for (int i = 0; i < in.length; i++) {
+			for (int j = 0; j < in[0].length; j++) {
 				double v = in[i][j];
-				log.appendText("\t"+ round(v,3));
+				log.appendText("\t" + round(v, 3));
 			}
 			log.appendText("\n");
 		}
 	}
-} //end of class SampleController{}
+} // end of class SampleController{}
