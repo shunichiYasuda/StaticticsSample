@@ -10,11 +10,54 @@ public class Stat {
 		r = sum / (double) in.length;
 		return r;
 	}
+	//ベクトルバージョン
+	public static double ave(CVector_Col in) {
+		double r = 0;
+		double sum = 0;
+		for (int i = 0; i < in.getDim(); i++) {
+			sum += in.getValue(i);
+		}
+		r = sum / (double) in.getDim();
+		return r;
+	}
+	//ベクトルバージョン　行ベクトル
+	public static double ave(CVector_Row in) {
+		double r = 0;
+		double sum = 0;
+		for (int i = 0; i < in.getDim(); i++) {
+			sum += in.getValue(i);
+		}
+		r = sum / (double) in.getDim();
+		return r;
+	}
 
 	//
 	public static double var(double[] in) {
 		double v = 0;
 		double[] dev = deviate(in);
+		double sum = 0;
+		for (int i = 0; i < dev.length; i++) {
+			sum += dev[i] * dev[i];
+		}
+		v = sum / (double) dev.length;
+		return v;
+	}
+	//ベクトルバージョン
+	public static double var(CVector_Col in) {
+		double v = 0;
+		double[] d = in.getArray();
+		double[] dev = deviate(d);
+		double sum = 0;
+		for (int i = 0; i < dev.length; i++) {
+			sum += dev[i] * dev[i];
+		}
+		v = sum / (double) dev.length;
+		return v;
+	}
+	public static double car(CVector_Row in) {
+		double v = 0;
+		double[] d = in.getArray();
+		double[] dev = deviate(d);
 		double sum = 0;
 		for (int i = 0; i < dev.length; i++) {
 			sum += dev[i] * dev[i];
@@ -41,6 +84,24 @@ public class Stat {
 		double a = ave(in);
 		for (int i = 0; i < r.length; i++) {
 			r[i] = in[i] - a;
+		}
+		return r;
+	}
+	//ベクトルバージョン
+	public static CVector_Col deviate(CVector_Col in) {
+		CVector_Col r = new CVector_Col(in);
+		double a = ave(r);
+		for (int i = 0; i < r.getDim(); i++) {
+			r.addScalar((-1)*a);
+		}
+		return r;
+	}
+	//
+	public static CVector_Row deviate(CVector_Row in) {
+		CVector_Row r = new CVector_Row(in);
+		double a = ave(r);
+		for (int i = 0; i < r.getDim(); i++) {
+			r.addScalar((-1)*a);
 		}
 		return r;
 	}
